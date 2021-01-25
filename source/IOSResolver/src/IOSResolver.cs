@@ -455,6 +455,9 @@ public class IOSResolver : AssetPostprocessor {
     // Whether to skip pod install when using workspace integration.
     private const string PREFERENCE_SKIP_POD_INSTALL_WHEN_USING_WORKSPACE_INTEGRATION =
         PREFERENCE_NAMESPACE + "SkipPodInstallWhenUsingWorkspaceIntegration";
+    // Cocoapods version to force from the command line
+    private const string PREFERENCE_FORCE_POD_VERSION =
+        PREFERENCE_NAMESPACE + "ForcePodVersion";
     // List of preference keys, used to restore default settings.
     private static string[] PREFERENCE_KEYS = new [] {
         PREFERENCE_COCOAPODS_INSTALL_ENABLED,
@@ -464,7 +467,8 @@ public class IOSResolver : AssetPostprocessor {
         PREFERENCE_POD_TOOL_EXECUTION_VIA_SHELL_ENABLED,
         PREFERENCE_AUTO_POD_TOOL_INSTALL_IN_EDITOR,
         PREFERENCE_WARN_UPGRADE_WORKSPACE,
-        PREFERENCE_SKIP_POD_INSTALL_WHEN_USING_WORKSPACE_INTEGRATION
+        PREFERENCE_SKIP_POD_INSTALL_WHEN_USING_WORKSPACE_INTEGRATION,
+        PREFERENCE_FORCE_POD_VERSION
     };
 
     // Whether the xcode extension was successfully loaded.
@@ -927,6 +931,14 @@ public class IOSResolver : AssetPostprocessor {
                                       defaultValue: false); }
         set { settings.SetBool(PREFERENCE_SKIP_POD_INSTALL_WHEN_USING_WORKSPACE_INTEGRATION,
                                value); }
+    }
+
+    /// <summary>
+    /// Cocoapods version to force from the command line
+    /// </summary>
+    public static string ForcePodVersion {
+        get { return settings.GetString(PREFERENCE_FORCE_POD_VERSION); }
+        set { settings.SetString(PREFERENCE_FORCE_POD_VERSION, value); }
     }
 
     /// <summary>
@@ -2250,6 +2262,10 @@ public class IOSResolver : AssetPostprocessor {
                 POD_EXECUTABLE, COCOAPOD_INSTALL_INSTRUCTIONS);
             Log(result.stderr, level: LogLevel.Error);
             completionDelegate(result);
+        }
+        var version = ForcePodVersion;
+        if (!string.IsNullOrEmpty(version)) {
+            podCommand += $" _{version}_";
         }
         RunCommandAsync(podCommand, podArgs, completionDelegate,
                         workingDirectory: pathToBuiltProject, displayDialog: displayDialog,
